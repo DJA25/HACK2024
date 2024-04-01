@@ -9,16 +9,20 @@
 
 //Graphics Libraries
 import java.awt.Graphics2D;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.awt.image.BufferStrategy;
 import java.awt.*;
-import java.util.ArrayList;
-import javax.swing.*;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
 
 //*******************************************************************************
 
-public class BasicGameApp implements Runnable, KeyListener, MouseListener {
+public class BasicGameApp implements Runnable, KeyListener, MouseListener, MouseMotionListener {
 
     //Variable Definition Section
     //Declare the variables used in the program
@@ -34,24 +38,15 @@ public class BasicGameApp implements Runnable, KeyListener, MouseListener {
     public JPanel panel;
 
     private int prevX, prevY;
-
     private Color currentColor = Color.BLACK;
     private int markerThickness = 3; // Marker thickness
-
-    int level = 0;
-
+    private DrawingGame.DrawingPanel drawingPanel;
     int screen = 0;
 
-    boolean playing = true;
-
-    boolean graded = false;
-
-    public Image copythis;
+    public BufferStrategy bufferStrategy;
 
     ArrayList<ArrayList<Point>> presets = new ArrayList<>();
     ArrayList<Point> userDraw = new ArrayList<>();
-
-    public BufferStrategy bufferStrategy;
 
     // Main method definition
     // This is the code that runs first and automatically
@@ -96,25 +91,17 @@ public class BasicGameApp implements Runnable, KeyListener, MouseListener {
     //Paints things on the screen using bufferStrategy
     private void render() {
         Graphics2D g = (Graphics2D) bufferStrategy.getDrawGraphics();
+        g.clearRect(0, 0, WIDTH, HEIGHT);
+        g.setBackground(Color.WHITE);
 
-        if(screen == 0) {
-            showInstructions();
+        for(int i = 0; i<userDraw.size()-1; i++) {
+            g.setStroke(new BasicStroke(markerThickness));
+            g.drawLine(userDraw.get(i).x, userDraw.get(i).y, userDraw.get(i+1).x, userDraw.get(i+1).y);
         }
-
-
-
-
         //draw the images
 
         g.dispose();
         bufferStrategy.show();
-    }
-
-    private void showInstructions(Graphics2D g) {
-        g.drawString("Instructions:\n" +
-                "1. An image will pop up on your screen for a few seconds.\n" +
-                "2. After the image disappears, recreate the image to the best of your memory in the white box. You will be graded on your drawing's accuracy.\n" +
-                "3. Click ENTER to submit for grading. Submit ENTER to move to next level after, or click r to restart level.", 100, 100);
     }
 
     //Pauses or sleeps the computer for the amount specified in milliseconds
@@ -151,12 +138,161 @@ public class BasicGameApp implements Runnable, KeyListener, MouseListener {
         canvas.createBufferStrategy(2);
         bufferStrategy = canvas.getBufferStrategy();
         canvas.requestFocus();
-        System.out.println("DONE graphic setup");
+        canvas.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
 
-        canvas.addKeyListener(this); // This registers the BasicGameApp as a KeyListener to the canvas
-        canvas.addMouseListener(this); // This registers the BasicGameApp as a MouseListener to the canvas
-        canvas.setFocusable(true); // Makes sure the canvas can gain focus to capture key events
-        canvas.requestFocus(); // Requests focus to the canvas so it can capture input
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+
+            }
+        });
+        canvas.addMouseListener(new MouseListener() {
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                int prevX = e.getX();
+                int prevY = e.getY();
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+
+            }
+        });
+
+        canvas.addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+//                System.out.println("TF?");
+                int x = e.getX();
+                int y = e.getY();
+
+                userDraw.add(new Point(x, y));
+
+                prevX = x;
+                prevY = y;
+            }
+        });
+
+        System.out.println("DONE graphic setup");
     }
 
+    @Override
+    public void keyTyped(KeyEvent e) {
+
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if(e.getKeyChar() == ' ') {
+            screen ++;
+            screen %= 2;
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent e) {
+        System.out.println("TF?");
+        int x = e.getX();
+        int y = e.getY();
+
+        userDraw.add(new Point(x, y));
+
+//        render(x, y);
+//        Graphics2D g2d = (Graphics2D) getGraphics();
+//        g2d.setColor(currentColor);
+//        g2d.setStroke(new BasicStroke(markerThickness)); // Set marker thickness
+//        g2d.drawLine(prevX, prevY, x, y);
+
+        prevX = x;
+        prevY = y;
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent e) {
+
+    }
+
+
+    public static ArrayList<Point> findBlack(String filePath) throws IOException {
+        ArrayList<Point> result = new ArrayList<>();
+        // Load the image
+        BufferedImage image = ImageIO.read(new File(filePath));
+
+        // Get image dimensions
+        int width = image.getWidth();
+        int height = image.getHeight();
+
+        // Iterate over all pixels
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int pixel = image.getRGB(x, y);
+                // Decompose the color into RGB components
+                int red = (pixel >> 16) & 0xff;
+                int green = (pixel >> 8) & 0xff;
+                int blue = (pixel) & 0xff;
+
+                // Check if the pixel is black
+                if (red <= 5 && green <= 5 && blue <= 5) {
+                    result.add(new Point(x, y));
+                }
+            }
+        }
+        return result;
+    }
 }
+
+
+
