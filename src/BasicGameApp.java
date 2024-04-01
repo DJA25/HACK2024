@@ -22,6 +22,9 @@ import java.io.*;
 
 public class BasicGameApp extends JFrame {
 
+
+
+    ArrayList<Point> userDraw = new ArrayList<>();
     int prevX, prevY;
     public BasicGameApp() {
         setTitle("Drawing Game");
@@ -35,6 +38,7 @@ public class BasicGameApp extends JFrame {
             public void mousePressed(MouseEvent e) {
                 prevX = e.getX();
                 prevY = e.getY();
+                userDraw.add(new Point(prevX, prevY));
             }
         });
 
@@ -49,6 +53,7 @@ public class BasicGameApp extends JFrame {
 
                 prevX = x;
                 prevY = y;
+                userDraw.add(new Point(prevX, prevY));
             }
         });
 
@@ -65,5 +70,13 @@ public class BasicGameApp extends JFrame {
                 game.setVisible(true);
             }
         });
+    }
+
+    public static class Point {
+        double x, y;
+        Point(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
     }
 }
