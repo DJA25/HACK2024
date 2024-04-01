@@ -9,74 +9,154 @@
 
 //Graphics Libraries
 import java.awt.Graphics2D;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferStrategy;
 import java.awt.*;
+import java.util.ArrayList;
 import javax.swing.*;
-import java.util.*;
-import java.io.*;
 
 //*******************************************************************************
 
-public class BasicGameApp extends JFrame {
+public class BasicGameApp implements Runnable, KeyListener, MouseListener {
 
+    //Variable Definition Section
+    //Declare the variables used in the program
+    //You can set their initial values too
 
+    //Sets the width and height of the program window
+    final int WIDTH = 800;
+    final int HEIGHT = 800;
 
+    //Declare the variables needed for the graphics
+    public JFrame frame;
+    public Canvas canvas;
+    public JPanel panel;
+
+    private int prevX, prevY;
+
+    private Color currentColor = Color.BLACK;
+    private int markerThickness = 3; // Marker thickness
+
+    int level = 0;
+
+    int screen = 0;
+
+    boolean playing = true;
+
+    boolean graded = false;
+
+    public Image copythis;
+
+    ArrayList<ArrayList<Point>> presets = new ArrayList<>();
     ArrayList<Point> userDraw = new ArrayList<>();
-    int prevX, prevY;
-    public BasicGameApp() {
-        setTitle("Drawing Game");
-        setSize(800, 800);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        JPanel drawingPanel = new JPanel();
-        drawingPanel.setBackground(Color.WHITE);
+    public BufferStrategy bufferStrategy;
 
-        drawingPanel.addMouseListener(new MouseAdapter() {
-            public void mousePressed(MouseEvent e) {
-                prevX = e.getX();
-                prevY = e.getY();
-                userDraw.add(new Point(prevX, prevY));
-            }
-        });
-
-        drawingPanel.addMouseMotionListener(new MouseMotionAdapter() {
-            public void mouseDragged(MouseEvent e) {
-                int x = e.getX();
-                int y = e.getY();
-
-                Graphics g = drawingPanel.getGraphics();
-                g.setColor(Color.BLACK);
-                g.drawLine(prevX, prevY, x, y);
-
-                prevX = x;
-                prevY = y;
-                userDraw.add(new Point(prevX, prevY));
-            }
-        });
-
-        Container contentPane = getContentPane();
-        contentPane.setLayout(new BorderLayout());
-        contentPane.add(drawingPanel, BorderLayout.CENTER);
-        contentPane.add(drawingPanel, BorderLayout.CENTER);
-    }
-
+    // Main method definition
+    // This is the code that runs first and automatically
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                BasicGameApp game = new BasicGameApp();
-                game.setVisible(true);
-            }
-        });
+        BasicGameApp ex = new BasicGameApp();   //creates a new instance of the game
+        new Thread(ex).start();                 //creates a threads & starts up the code in the run( ) method
     }
 
-    public static class Point {
-        double x, y;
-        Point(int x, int y) {
-            this.x = x;
-            this.y = y;
+
+    // This section is the setup portion of the program
+    // Initialize your variables and construct your program objects here.
+    public BasicGameApp() { // BasicGameApp constructor
+
+        setUpGraphics();
+
+        //variable and objects
+        //create (construct) the objects needed for the game
+
+    } // end BasicGameApp constructor
+
+
+//*******************************************************************************
+//User Method Section
+//
+// put your code to do things here.
+
+    // main thread
+    // this is the code that plays the game after you set things up
+    public void run() {
+        //for the moment we will loop things forever.
+        while (true) {
+            moveThings();  //move all the game objects
+            render();  // paint the graphics
+            pause(10); // sleep for 10 ms
         }
     }
+
+    public void moveThings() {
+        //call the move() code for each object
+    }
+
+    //Paints things on the screen using bufferStrategy
+    private void render() {
+        Graphics2D g = (Graphics2D) bufferStrategy.getDrawGraphics();
+
+        if(screen == 0) {
+            showInstructions();
+        }
+
+
+
+
+        //draw the images
+
+        g.dispose();
+        bufferStrategy.show();
+    }
+
+    private void showInstructions(Graphics2D g) {
+        g.drawString("Instructions:\n" +
+                "1. An image will pop up on your screen for a few seconds.\n" +
+                "2. After the image disappears, recreate the image to the best of your memory in the white box. You will be graded on your drawing's accuracy.\n" +
+                "3. Click ENTER to submit for grading. Submit ENTER to move to next level after, or click r to restart level.", 100, 100);
+    }
+
+    //Pauses or sleeps the computer for the amount specified in milliseconds
+    public void pause(int time ) {
+        try {
+            Thread.sleep(time);
+        } catch (InterruptedException e) {
+        }
+    }
+
+    //Graphics setup method
+    private void setUpGraphics() {
+        frame = new JFrame("Application Template");   //Create the program window or frame.  Names it.
+
+        panel = (JPanel) frame.getContentPane();  //sets up a JPanel which is what goes in the frame
+        panel.setPreferredSize(new Dimension(WIDTH, HEIGHT));  //sizes the JPanel
+        panel.setLayout(null);   //set the layout
+
+        // creates a canvas which is a blank rectangular area of the screen onto which the application can draw
+        // and trap input events (Mouse and Keyboard events)
+        canvas = new Canvas();
+        canvas.setBounds(0, 0, WIDTH, HEIGHT);
+        canvas.setIgnoreRepaint(true);
+
+        panel.add(canvas);  // adds the canvas to the panel.
+
+        // frame operations
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  //makes the frame close and exit nicely
+        frame.pack();  //adjusts the frame and its contents so the sizes are at their default or larger
+        frame.setResizable(false);   //makes it so the frame cannot be resized
+        frame.setVisible(true);      //IMPORTANT!!!  if the frame is not set to visible it will not appear on the screen!
+
+        // sets up things so the screen displays images nicely.
+        canvas.createBufferStrategy(2);
+        bufferStrategy = canvas.getBufferStrategy();
+        canvas.requestFocus();
+        System.out.println("DONE graphic setup");
+
+        canvas.addKeyListener(this); // This registers the BasicGameApp as a KeyListener to the canvas
+        canvas.addMouseListener(this); // This registers the BasicGameApp as a MouseListener to the canvas
+        canvas.setFocusable(true); // Makes sure the canvas can gain focus to capture key events
+        canvas.requestFocus(); // Requests focus to the canvas so it can capture input
+    }
+
 }
